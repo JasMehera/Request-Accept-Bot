@@ -18,4 +18,3 @@ AUTH_CHANNELS = list(map(int, os.environ.get("AUTH_CHANNEL", "").split())) # Add
 APPROVED_BUTTON_URL = "https://t.me/Union_Botss"
 APPROVED_IMAGE_URL = "https://envs.sh/4f4.jpg"
 
-START_IMAGE = "https://envs.sh/4fO.jpg"  # replace with your image URL
