@@ -20,10 +20,10 @@ async def start_cmd(client, message):
         text.START.format(message.from_user.mention),
         disable_web_page_preview=True,
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton('⇆ ᴀᴅᴅ ᴍᴇ ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘs ⇆', url=f"https://telegram.me/QuickAcceptBot?startgroup=true&admin=invite_users")],
+            [InlineKeyboardButton('⇆ ᴀᴅᴅ ᴍᴇ ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘs ⇆', url=f"https://telegram.me/Pending_Request_Auto_Accept_Bot?startgroup=true&admin=invite_users")],
             [InlineKeyboardButton('ᴀʙᴏᴜᴛ', callback_data='about'),
              InlineKeyboardButton('ʜᴇʟᴘ', callback_data='help')],
-            [InlineKeyboardButton('⇆ ᴀᴅᴅ ᴍᴇ ᴛᴏ ʏᴏᴜʀ ᴄʜᴀɴɴᴇʟ ⇆', url=f"https://telegram.me/QuickAcceptBot?startchannel=true&admin=invite_users")]
+            [InlineKeyboardButton('⇆ ᴀᴅᴅ ᴍᴇ ᴛᴏ ʏᴏᴜʀ ᴄʜᴀɴɴᴇʟ ⇆', url=f"https://telegram.me/Pending_Request_Auto_Accept_Bot?startchannel=true&admin=invite_users")]
             ])
         )
 
@@ -76,6 +76,8 @@ async def accept(client, message):
         await msg.edit(f"**An error occurred:** `{str(e)}`")
 
 
+
+
 @Client.on_chat_join_request()
 async def approve_new(client, m):
     if not NEW_REQ_MODE:
@@ -83,9 +85,21 @@ async def approve_new(client, m):
     try:
         await client.approve_chat_join_request(m.chat.id, m.from_user.id)
         try:
-            await client.send_message(
+            await client.send_photo(
                 m.from_user.id,
-                f"{m.from_user.mention},\n\n𝖸𝗈𝗎𝗋 𝖱𝖾𝗊𝗎𝗌𝗍 𝖳𝗈 𝖩𝗈𝗂𝗇 {m.chat.title} 𝖧𝖺𝗌 𝖡𝖾𝖾𝗇 𝖠𝖼𝖼𝖾𝗉𝗍𝖾𝖽."
+                photo=APPROVED_IMAGE_URL,
+                caption=f"{m.from_user.mention},\n\n𝖸𝗈𝗎𝗋 𝖱𝖾𝗊𝗎𝗌𝗍 𝖳𝗈 𝖩𝗈𝗂𝗇 {m.chat.title} 𝖧𝖺𝗌 𝖡𝖾𝖾𝗇 𝖠𝖼𝖼𝖾𝗉𝗍𝖾𝖽.",
+                reply_markup=InlineKeyboardMarkup([
+                    [
+                        InlineKeyboardButton("↗ Visit Channel", url=APPROVED_BUTTON_URL),
+                        InlineKeyboardButton("➕ Add Me To Group", url="https://t.me/Pending_Request_Auto_Accept_Bot?startgroup=true")
+                    ],
+                    [
+                        InlineKeyboardButton("ʜᴇɴᴛᴀɪ ɪɴᴅᴀɪɴ 𝟷", url="https://t.me/Adult_Union"),
+                        InlineKeyboardButton("sᴇʀɪs", url="https://t.me/Series_Union")
+                        InlineKeyboardButton("ʜᴇɴᴛᴀɪ ɪɴᴅɪᴀɴ 𝟸", url="https://t.me/+xvsmvQrvxSlmYWE1")
+                    ]
+                ])
             )
         except:
             pass
