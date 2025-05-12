@@ -1,12 +1,11 @@
-from pyrogram import Client, filters, enums
-from pyrogram.errors import *
-from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
-from config import *
-import asyncio
-from Script import text
-from .db import tb
+from pyrogram import Client, filters
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from .db import tb  # Importing the necessary db functions
 from .fsub import get_fsub
+from Script import text
+import asyncio
 
+# Existing start command
 @Client.on_message(filters.command("start"))
 async def start_cmd(client, message):
     if await tb.get_user(message.from_user.id) is None:
@@ -27,6 +26,64 @@ async def start_cmd(client, message):
             ])
         )
 
+# Command to add an admin
+@Client.on_message(filters.command("add_admin") & filters.user(ADMIN))
+async def add_admin(client, message):
+    try:
+        user_id = int(message.text.split()[1])  # Get user ID from the message
+        if await tb.add_admin(user_id):  # Add the user as an admin
+            await message.reply("Admin added successfully!")
+        else:
+            await message.reply("User is already an admin!")
+    except Exception as e:
+        await message.reply(f"Error: {str(e)}")
+
+# Command to remove an admin
+@Client.on_message(filters.command("remove_admin") & filters.user(ADMIN))
+async def remove_admin(client, message):
+    try:
+        user_id = int(message.text.split()[1])  # Get user ID from the message
+        if await tb.remove_admin(user_id):  # Remove the user as an admin
+            await message.reply("Admin removed successfully!")
+        else:
+            await message.reply("User is not an admin!")
+    except Exception as e:
+        await message.reply(f"Error: {str(e)}")
+
+# Command to list all admins
+@Client.on_message(filters.command("admins") & filters.user(ADMIN))
+async def list_admins(client, message):
+    try:
+        admins = await tb.get_all_admins()  # Fetch all admins from the database
+        admin_list = "\n".join([str(admin) for admin in admins])  # Format admin list
+        await message.reply(f"**Admins:**\n{admin_list}", disable_web_page_preview=True)
+    except Exception as e:
+        await message.reply(f"Error: {str(e)}")
+
+# Command to set a custom start image
+@Client.on_message(filters.command("setimg") & filters.user(ADMIN))
+async def set_start_image(client, message):
+    try:
+        image_url = message.text.split()[1]  # Get the image URL from the message
+        if await tb.set_start_image(image_url):  # Set the new start image URL
+            await message.reply("Start image updated successfully!")
+        else:
+            await message.reply("Error updating start image.")
+    except Exception as e:
+        await message.reply(f"Error: {str(e)}")
+
+# Command to remove the start image
+@Client.on_message(filters.command("removeimg") & filters.user(ADMIN))
+async def remove_start_image(client, message):
+    try:
+        if await tb.remove_start_image():  # Remove the start image
+            await message.reply("Start image removed successfully!")
+        else:
+            await message.reply("No start image to remove.")
+    except Exception as e:
+        await message.reply(f"Error: {str(e)}")
+
+# Command to check stats (total users)
 @Client.on_message(filters.command("stats") & filters.private & filters.user(ADMIN))
 async def total_users(client, message):
     try:
@@ -37,6 +94,7 @@ async def total_users(client, message):
         await asyncio.sleep(30)
         await r.delete()
 
+# Command to accept join requests
 @Client.on_message(filters.command('accept') & filters.private)
 async def accept(client, message):
     show = await message.reply("**Please Wait.....**")
@@ -75,9 +133,7 @@ async def accept(client, message):
     except Exception as e:
         await msg.edit(f"**An error occurred:** `{str(e)}`")
 
-
-
-
+# Command to approve new join requests
 @Client.on_chat_join_request()
 async def approve_new(client, m):
     if not NEW_REQ_MODE:
