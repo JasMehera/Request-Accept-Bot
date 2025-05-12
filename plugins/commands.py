@@ -1,12 +1,16 @@
-from pyrogram import Client, filters
+import os
+import asyncio
+from pyrogram import Client, filters, enums
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from .db import tb  # Importing the necessary db functions
 from .fsub import get_fsub
 from Script import text
-import asyncio
-from config import ADMIN
+from config import (
+    ADMIN, IS_FSUB, API_ID, API_HASH, LOG_CHANNEL,
+    APPROVED_IMAGE_URL, APPROVED_BUTTON_URL, NEW_REQ_MODE
+)
 
-# Existing start command
+# /start command
 @Client.on_message(filters.command("start"))
 async def start_cmd(client, message):
     if await tb.get_user(message.from_user.id) is None:
@@ -24,78 +28,89 @@ async def start_cmd(client, message):
             [InlineKeyboardButton('ᴀʙᴏᴜᴛ', callback_data='about'),
              InlineKeyboardButton('ʜᴇʟᴘ', callback_data='help')],
             [InlineKeyboardButton('⇆ ᴀᴅᴅ ᴍᴇ ᴛᴏ ʏᴏᴜʀ ᴄʜᴀɴɴᴇʟ ⇆', url=f"https://telegram.me/Pending_Request_Auto_Accept_Bot?startchannel=true&admin=invite_users")]
-            ])
-        )
+        ])
+    )
 
-# Command to add an admin
+# /add_admin command
 @Client.on_message(filters.command("add_admin") & filters.user(ADMIN))
 async def add_admin(client, message):
+    if len(message.command) < 2:
+        return await message.reply("Usage: /add_admin <user_id>")
     try:
-        user_id = int(message.text.split()[1])  # Get user ID from the message
-        if await tb.add_admin(user_id):  # Add the user as an admin
-            await message.reply("Admin added successfully!")
+        user_id = int(message.command[1])
+        if await tb.add_admin(user_id):
+            await message.reply("✅ Admin added successfully!")
         else:
-            await message.reply("User is already an admin!")
+            await message.reply("⚠️ User is already an admin!")
     except Exception as e:
         await message.reply(f"Error: {str(e)}")
 
-# Command to remove an admin
+# /remove_admin command
 @Client.on_message(filters.command("remove_admin") & filters.user(ADMIN))
 async def remove_admin(client, message):
+    if len(message.command) < 2:
+        return await message.reply("Usage: /remove_admin <user_id>")
     try:
-        user_id = int(message.text.split()[1])  # Get user ID from the message
-        if await tb.remove_admin(user_id):  # Remove the user as an admin
-            await message.reply("Admin removed successfully!")
+        user_id = int(message.command[1])
+        if await tb.remove_admin(user_id):
+            await message.reply("✅ Admin removed successfully!")
         else:
-            await message.reply("User is not an admin!")
+            await message.reply("⚠️ User is not an admin!")
     except Exception as e:
         await message.reply(f"Error: {str(e)}")
 
-# Command to list all admins
+# /admins command
 @Client.on_message(filters.command("admins") & filters.user(ADMIN))
 async def list_admins(client, message):
     try:
-        admins = await tb.get_all_admins()  # Fetch all admins from the database
-        admin_list = "\n".join([str(admin) for admin in admins])  # Format admin list
-        await message.reply(f"**Admins:**\n{admin_list}", disable_web_page_preview=True)
+        admins = await tb.get_all_admins()
+        admin_list = "\n".join([f"`{admin}`" for admin in admins])
+        await message.reply(f"**Admins:**\n{admin_list}")
     except Exception as e:
         await message.reply(f"Error: {str(e)}")
 
-# Command to set a custom start image
+# /setimg command
 @Client.on_message(filters.command("setimg") & filters.user(ADMIN))
 async def set_start_image(client, message):
+    if len(message.command) < 2:
+        return await message.reply("Usage: /setimg <image_url>")
     try:
-        image_url = message.text.split()[1]  # Get the image URL from the message
-        if await tb.set_start_image(image_url):  # Set the new start image URL
-            await message.reply("Start image updated successfully!")
+        image_url = message.command[1]
+        if await tb.set_start_image(image_url):
+            await message.reply("✅ Start image updated successfully!")
         else:
-            await message.reply("Error updating start image.")
+            await message.reply("⚠️ Failed to update start image.")
     except Exception as e:
         await message.reply(f"Error: {str(e)}")
 
-# Command to remove the start image
+# /removeimg command
 @Client.on_message(filters.command("removeimg") & filters.user(ADMIN))
 async def remove_start_image(client, message):
     try:
-        if await tb.remove_start_image():  # Remove the start image
-            await message.reply("Start image removed successfully!")
+        if await tb.remove_start_image():
+            await message.reply("❌ Start image removed successfully.")
         else:
-            await message.reply("No start image to remove.")
+            await message.reply("⚠️ No start image to remove.")
     except Exception as e:
         await message.reply(f"Error: {str(e)}")
 
-# Command to check stats (total users)
+# /stats command
 @Client.on_message(filters.command("stats") & filters.private & filters.user(ADMIN))
 async def total_users(client, message):
     try:
         users = await tb.get_all_users()
-        await message.reply(f"👥 **Total Users:** {len(users)}", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🎭 Close", callback_data="close")]]))
+        await message.reply(
+            f"👥 **Total Users:** {len(users)}",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("🎭 Close", callback_data="close")]
+            ])
+        )
     except Exception as e:
         r = await message.reply(f"❌ *Error:* `{str(e)}`")
         await asyncio.sleep(30)
         await r.delete()
 
-# Command to accept join requests
+# /accept command
 @Client.on_message(filters.command('accept') & filters.private)
 async def accept(client, message):
     show = await message.reply("**Please Wait.....**")
@@ -110,7 +125,10 @@ async def accept(client, message):
         return await show.edit("**Your login session has expired. Use /logout first, then /login again.**")
 
     await show.edit("**Forward a message from your Channel or Group (with forward tag).\n\nMake sure your logged-in account is an admin there with full rights.**")
-    fwd_msg = await client.listen(message.chat.id)
+    try:
+        fwd_msg = await client.listen(message.chat.id, timeout=60)
+    except asyncio.TimeoutError:
+        return await show.edit("⏳ Timeout: You didn't forward a message in time.")
 
     if fwd_msg.forward_from_chat and fwd_msg.forward_from_chat.type not in [enums.ChatType.PRIVATE, enums.ChatType.BOT]:
         chat_id = fwd_msg.forward_from_chat.id
@@ -130,11 +148,11 @@ async def accept(client, message):
             join_requests = [req async for req in acc.get_chat_join_requests(chat_id)]
             if not join_requests:
                 break
-        await msg.edit("**✅ Successfully accepted all join requests.**")
+        await msg.edit("✅ Successfully accepted all join requests.")
     except Exception as e:
         await msg.edit(f"**An error occurred:** `{str(e)}`")
 
-# Command to approve new join requests
+# Auto approve new requests
 @Client.on_chat_join_request()
 async def approve_new(client, m):
     if not NEW_REQ_MODE:
@@ -153,7 +171,7 @@ async def approve_new(client, m):
                     ],
                     [
                         InlineKeyboardButton("ʜᴇɴᴛᴀɪ ɪɴᴅᴀɪɴ 𝟷", url="https://t.me/Adult_Union"),
-                        InlineKeyboardButton("sᴇʀɪs", url="https://t.me/Series_Union"), 
+                        InlineKeyboardButton("sᴇʀɪs", url="https://t.me/Series_Union"),
                         InlineKeyboardButton("ʜᴇɴᴛᴀɪ ɪɴᴅɪᴀɴ 𝟸", url="https://t.me/+xvsmvQrvxSlmYWE1")
                     ]
                 ])
@@ -162,4 +180,17 @@ async def approve_new(client, m):
             pass
     except Exception as e:
         print(str(e))
-        pass
+
+# Help callback
+@Client.on_callback_query(filters.regex("help"))
+async def help_cb(client, callback_query):
+    await callback_query.message.edit(
+        "ℹ️ **Help Menu**:\n\nUse /accept to approve requests.\nCommands:\n/setimg\n/removeimg\n/add_admin\n/remove_admin\n/admins\n/stats"
+    )
+
+# About callback
+@Client.on_callback_query(filters.regex("about"))
+async def about_cb(client, callback_query):
+    await callback_query.message.edit(
+        "🤖 **About This Bot**\n\nThis bot automatically accepts join requests in your channels or groups.\nMade with ❤️ by @Union_Botss"
+    )
