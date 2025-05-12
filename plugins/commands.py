@@ -96,7 +96,7 @@ async def approve_new(client, m):
                     ],
                     [
                         InlineKeyboardButton("ʜᴇɴᴛᴀɪ ɪɴᴅᴀɪɴ 𝟷", url="https://t.me/Adult_Union"),
-                        InlineKeyboardButton("sᴇʀɪs", url="https://t.me/Series_Union")
+                        InlineKeyboardButton("sᴇʀɪs", url="https://t.me/Series_Union"), 
                         InlineKeyboardButton("ʜᴇɴᴛᴀɪ ɪɴᴅɪᴀɴ 𝟸", url="https://t.me/+xvsmvQrvxSlmYWE1")
                     ]
                 ])
