@@ -4,6 +4,7 @@ from .db import tb  # Importing the necessary db functions
 from .fsub import get_fsub
 from Script import text
 import asyncio
+from config import ADMIN
 
 # Existing start command
 @Client.on_message(filters.command("start"))
