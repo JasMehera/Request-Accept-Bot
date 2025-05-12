@@ -1,6 +1,7 @@
 from pyrogram import Client
 from pyrogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 from Script import text
+from .db import tb  # Importing the necessary db functions
 
 @Client.on_callback_query()
 async def callback_query_handler(client, query: CallbackQuery):
@@ -42,3 +43,51 @@ async def callback_query_handler(client, query: CallbackQuery):
 
     elif query.data == "close":
         await query.message.delete()
+
+    # New feature: show admins list
+    elif query.data == "admins":
+        admins = await tb.get_all_admins()  # Fetch all admins from the database
+        admin_list = "\n".join([str(admin) for admin in admins])  # Format admin list
+        await query.message.edit_text(
+            f"**Admins:**\n{admin_list}",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("↩ Back", callback_data="start"),
+                 InlineKeyboardButton("ᴄʟᴏꜱᴇ", callback_data="close")]
+            ])
+        )
+
+    # New feature: Add admin button clicked
+    elif query.data.startswith("add_admin_"):
+        try:
+            user_id = int(query.data.split("_")[2])  # Extract user ID from callback data
+            if await tb.add_admin(user_id):  # Add user to admin list
+                await query.message.edit_text(f"User {user_id} added as an admin successfully.")
+            else:
+                await query.message.edit_text(f"User {user_id} is already an admin.")
+        except Exception as e:
+            await query.message.edit_text(f"Error: {str(e)}")
+
+    # New feature: Remove admin button clicked
+    elif query.data.startswith("remove_admin_"):
+        try:
+            user_id = int(query.data.split("_")[2])  # Extract user ID from callback data
+            if await tb.remove_admin(user_id):  # Remove user from admin list
+                await query.message.edit_text(f"User {user_id} removed from admins successfully.")
+            else:
+                await query.message.edit_text(f"User {user_id} is not an admin.")
+        except Exception as e:
+            await query.message.edit_text(f"Error: {str(e)}")
+
+    # Handling setting/removing start image
+    elif query.data == "set_start_image":
+        await query.message.edit_text(
+            "Send the image URL you want to set as the start image."
+        )
+        await client.listen(query.message.chat.id)
+
+    elif query.data == "remove_start_image":
+        if await tb.remove_start_image():  # Check if there's a start image set
+            await query.message.edit_text("Start image removed successfully!")
+        else:
+            await query.message.edit_text("No start image to remove.")
+
